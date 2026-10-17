@@ -11,7 +11,7 @@ pnpm test
 pnpm build
 ```
 
-- Node >= 18.18，pnpm 11
+- Node >= 22.13，pnpm 11（pnpm 11 依赖 `node:sqlite`，Node 20 及以下不可用）
 - 需要真实签名链路时，安装 DevEco Studio（提供 `hap-sign-tool.jar`）
 - 没有证书也能开发：`pnpm demo` 会生成一个可演练的工程
 
