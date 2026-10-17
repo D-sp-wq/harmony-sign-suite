@@ -11,7 +11,15 @@
     "devtools"
   ],
   "license": "MIT",
-  "author": "hss contributors",
+  "author": "D-sp-wq",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/D-sp-wq/harmony-sign-suite.git"
+  },
+  "homepage": "https://github.com/D-sp-wq/harmony-sign-suite#readme",
+  "bugs": {
+    "url": "https://github.com/D-sp-wq/harmony-sign-suite/issues"
+  },
   "type": "module",
   "packageManager": "pnpm@11.7.0",
   "bin": {
