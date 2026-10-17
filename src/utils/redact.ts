@@ -7,39 +7,47 @@
  */
 const MASK = "********";
 
-const SECRET_FLAGS = [
-  "-keyPwd",
-  "-keystorePwd",
-  "-issuerKeyPwd",
-  "-profileSigned",
-];
+/**
+ * Secrets shorter than this are only masked where they appear as a flag value,
+ * never as a substring: otherwise a password like "demo" would mangle every
+ * path (`C:\dev\hss\examples\demo\…` → `examples\********\…`).
+ */
+const SUBSTRING_REDACT_MIN_LENGTH = 6;
 
-/** Replace every occurrence of a secret with a fixed mask. */
+const SECRET_FLAGS = ["-keyPwd", "-keystorePwd", "-issuerKeyPwd", "-profileKeyPwd"];
+
+/** Replace every occurrence of a reasonably long secret with a fixed mask. */
 export function redact(text: string, secrets: readonly string[]): string {
   let out = text;
   for (const secret of secrets) {
-    if (!secret || secret.length < 1) continue;
+    if (secret.length < SUBSTRING_REDACT_MIN_LENGTH) continue;
     out = out.split(secret).join(MASK);
   }
   return out;
 }
 
 /**
- * Redact an argv array: masks the value that follows a known password flag and
- * any standalone occurrence of a resolved secret.
+ * Redact an argv array:
+ *  - the value following a password flag is always masked;
+ *  - other tokens are masked only when they equal a secret exactly.
  */
 export function redactArgv(argv: readonly string[], secrets: readonly string[] = []): string[] {
+  const exact = new Set(secrets);
   const out: string[] = [];
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i] ?? "";
-    const isSecretFlag = SECRET_FLAGS.includes(token);
-    out.push(token);
-    if (isSecretFlag && i + 1 < argv.length) {
-      out.push(MASK);
+    if (SECRET_FLAGS.includes(token) && i + 1 < argv.length) {
+      out.push(token, MASK);
       i += 1;
+      continue;
     }
+    if (exact.has(token)) {
+      out.push(MASK);
+      continue;
+    }
+    out.push(redact(token, secrets));
   }
-  return out.map((token) => redact(token, secrets));
+  return out;
 }
 
 /** Human readable form of an argv array, safe to print. */
