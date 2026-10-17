@@ -19,6 +19,8 @@ hss verify    对已有包验签，并核对包内 profile
 
 > 定位：**不重新实现签名算法**。真正的密码学由官方 `hap-sign-tool.jar` 完成，hss 负责编排、校验、诊断与可复现性。
 
+![hss doctor 对真实 AGC 物料体检：21 项检查全绿](docs/images/agc-doctor-after.png)
+
 ---
 
 ## 为什么需要它

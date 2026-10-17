@@ -24,6 +24,30 @@ export interface ReportMeta {
   timestamp?: string;
 }
 
+/** Terminal display width: CJK and full-width characters occupy two cells. */
+export function displayWidth(text: string): number {
+  let width = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    width +=
+      (code >= 0x1100 && code <= 0x115f) ||
+      (code >= 0x2e80 && code <= 0xa4cf) ||
+      (code >= 0xac00 && code <= 0xd7a3) ||
+      (code >= 0xf900 && code <= 0xfaff) ||
+      (code >= 0xfe30 && code <= 0xfe6f) ||
+      (code >= 0xff00 && code <= 0xff60) ||
+      (code >= 0xffe0 && code <= 0xffe6)
+        ? 2
+        : 1;
+  }
+  return width;
+}
+
+/** Pad with spaces so the *rendered* width matches, which keeps CJK columns aligned. */
+function padToDisplayWidth(text: string, width: number): string {
+  return text + " ".repeat(Math.max(0, width - displayWidth(text)));
+}
+
 /** Print a check report to the terminal. */
 export function printReport(logger: Logger, results: readonly CheckResult[], meta: ReportMeta): void {
   logger.heading(`hss ${meta.command}`);
@@ -31,9 +55,9 @@ export function printReport(logger: Logger, results: readonly CheckResult[], met
   if (meta.envName) logger.dim(`env      ${meta.envName}`);
   logger.raw("");
 
-  const width = Math.min(64, Math.max(...results.map((r) => r.title.length), 10));
+  const width = Math.min(64, Math.max(...results.map((r) => displayWidth(r.title)), 10));
   for (const r of results) {
-    const padded = r.title.padEnd(width, " ");
+    const padded = padToDisplayWidth(r.title, width);
     if (r.status === "pass") logger.info(`  ✓ ${padded}  ${r.detail ?? ""}`.trimEnd());
     else if (r.status === "warn") logger.warn(`  ! ${padded}  ${r.detail ?? ""}`.trimEnd());
     else if (r.status === "fail") logger.error(`  ✗ ${padded}  ${r.detail ?? ""}`.trimEnd());

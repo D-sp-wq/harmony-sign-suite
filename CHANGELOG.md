@@ -3,6 +3,15 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-10-17
+
+### Fixed
+- Terminal report columns now align for CJK titles: padding uses display width (CJK = 2 cells) instead of string length, so the detail column no longer drifts.
+
+### Added
+- `docs/images/` — real terminal captures for the AGC article, rendered by `scripts/make_article_images.py`.
+- Article section on 2026 npm publishing changes (mandatory 2FA, TOTP removal, staged publishing, trusted publishing).
+
 ## [0.3.0] - 2026-10-17
 
 > First public release on npm: [`harmony-sign-suite@0.3.0`](https://www.npmjs.com/package/harmony-sign-suite) (published 2026-10-17).

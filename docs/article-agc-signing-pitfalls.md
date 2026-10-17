@@ -49,6 +49,10 @@ certificate #1 is not signed by #2 (<developer>,Release)
 
 把整条链反转后，这三张证书的顺序校验、CA 标记、公钥一致性会一起恢复正常。
 
+用工具跑一遍真实 AGC 物料，报错长这样（注意它同时连锁出了"CA 标记异常"和"证书一致性失败"）：
+
+![hss doctor 对真实 AGC 物料体检：反序证书链导致 3 项失败](images/agc-doctor-before.png)
+
 ---
 
 ## 2. 坑二：`Illegal base64 character 20 / 2b` —— 但边界不是你以为的那样
@@ -177,6 +181,14 @@ $ hss fix
 修复后体检：20 passed · 0 warning · 0 failure · 1 skipped
 ```
 
+真实运行效果（自动留 `.bak-<时间戳>` 备份，幂等）：
+
+![hss fix 自动重排反序证书链](images/agc-fix.png)
+
+修完再体检，21 项里 20 过、1 项提示性跳过，`证书一致性` 也从失败变通过：
+
+![修复后 hss doctor 全绿](images/agc-doctor-after.png)
+
 （`1 skipped` 就是上面说的 p7b 编码检查——已签名 profile 不可改写，只作提示。）
 
 如果用的是未签名模板，同一个命令还会多修一项：
@@ -231,13 +243,93 @@ java -jar hap-sign-tool.jar sign-app -mode localSign \
 
 ---
 
-## 7. 小结
+## 7. 附：把包发到 npm，也踩了三个新坑
+
+工具做完了总得发出去。结果 2026 年的 npm 发布流程也变了，顺手记录一下（这部分跟鸿蒙无关，但同样是"报错不说人话"）：
+
+### 坑 A：发布强制 2FA
+
+账号 2FA 关闭时直接：
+
+```
+npm error code E403
+npm error 403 Forbidden - PUT https://registry.npmjs.org/<pkg>
+npm error 403 Two-factor authentication or granular access token with bypass 2fa enabled
+npm error 403 is required to publish packages.
+```
+
+注意：**登录时的邮箱验证码不算 2FA**。`npm profile get` 里 `two-factor auth: disabled` 才是真相。
+
+### 坑 B：TOTP 已经不能新开了
+
+按老教程执行：
+
+```
+npm profile enable-2fa auth-and-writes
+npm error 404 Not Found - POST https://registry.npmjs.org/-/npm/v1/user
+npm error 404 Adding a new TOTP 2FA is no longer supported.
+```
+
+npm 现在只接受**安全密钥 / 通行密钥**（Windows Hello、Touch ID、YubiKey）。去设置页添加即可：
+
+```
+https://www.npmjs.com/settings/<用户名>/tfa
+```
+
+### 坑 C：新包首发走 staged publishing
+
+有了 2FA 之后，`npm publish` 仍然可能在非交互环境里失败（CLI 会弹浏览器挑战，但 CI / 脚本接不住）。新包首次发布更稳的路径是 **staged publishing**：
+
+```bash
+npm stage publish --access public     # 入队，输出 stage id
+npm stage list                        # 等到 status: staged（校验约 30-60s）
+npm stage approve <stage-id>          # 打开浏览器完成安全密钥验证
+```
+
+还有一个坑：刚入队时状态是 `validating`，这时候 approve 会返回 `404 staged version not found`——**要等状态变成 `staged` 再批准**。
+
+### 后续：CI 不要再塞 token 了
+
+npm 的政策路线很明确：
+
+- 2026-08 起，绕过 2FA 的 GAT 不能再做账号/权限类操作；
+- **2027-01 起，绕过 2FA 的 GAT 不能再直接发布**；
+- 推荐路径是 **Trusted Publishing（OIDC）**：CI 用 `id-token: write` + `npm publish --provenance`，不需要任何 token。
+
+所以工具仓库的 `release.yml` 最终改成了：
+
+```yaml
+permissions:
+  contents: read
+  id-token: write
+steps:
+  - run: npm install && npm test && npm run build
+  - run: npm publish --provenance --access public
+```
+
+再配一次包设置里的 trusted publisher（owner / repo / workflow）就完事。
+
+> 小结一句：**当"发布"本身开始需要一行行试错时，就说明它值得被写进 checklist。** 项目里 `docs/RELEASE.md` 现在就是这份清单。
+
+---
+
+## 8. 小结
 
 1. **AGC 的 `.cer` 可能是反序的**（根→中间→叶子），先验签发关系再下结论。
 2. **base64url 的坑只属于自签 profile**，别把它套到 AGC 的 p7b 上——这是我这次最主要的自我修正。
 3. **`not trusted` 不是签名成败的判据**，它只说明工具不认可这条信任链。
 4. 报错不指向原因时，把它做成检查项和自动修复，比写一篇笔记更有价值。
 
-工具是开源的（`hss`，命令：`init` / `keygen` / `doctor` / `fix` / `sign` / `verify`），上面所有结论都有对应的测试与回归用例。
+工具是开源的：`hss`（`init` / `keygen` / `doctor` / `fix` / `sign` / `verify`），已发布到 npm：
+
+```bash
+npm i -g harmony-sign-suite
+# 或
+npx harmony-sign-suite@latest --help
+```
+
+仓库：<https://github.com/D-sp-wq/harmony-sign-suite>
+
+上面所有结论都有对应的测试与回归用例。
 
 > 如果你在 AGC 物料上遇到不同的行为，尤其是不同 `hap-sign-tool` 版本下 base64url 的边界，欢迎带着版本号来对一下——这类"版本相关的隐式约定"最值得记录。

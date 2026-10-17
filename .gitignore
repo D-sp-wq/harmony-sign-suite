@@ -23,3 +23,6 @@ hss.secrets.local.yaml
 # npm publish credentials
 .npmrc
 .npm-token
+
+# raw terminal captures used to render article screenshots (may contain local paths)
+docs/images/*.txt
