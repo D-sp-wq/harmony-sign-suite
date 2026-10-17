@@ -164,8 +164,12 @@ describe("assertFreshOutDir", () => {
 
 describe("runKeygen", () => {
   const fakeRunner: CommandRunner = async (argv) => {
-    const outFile = argv[argv.indexOf("-outFile") + 1];
-    const keystore = argv[argv.indexOf("-keystoreFile") + 1];
+    const valueOf = (flag: string): string | undefined => {
+      const index = argv.indexOf(flag);
+      return index >= 0 ? argv[index + 1] : undefined;
+    };
+    const outFile = valueOf("-outFile");
+    const keystore = valueOf("-keystoreFile");
     if (keystore) await writeFile(keystore, "fake-p12");
     if (outFile) {
       const chain = await createTestChain();
