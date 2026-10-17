@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/) and the proje
 
 ## [0.3.0] - 2026-10-17
 
+> First public release on npm: [`harmony-sign-suite@0.3.0`](https://www.npmjs.com/package/harmony-sign-suite) (published 2026-10-17).
+
 ### Added
 - `hss fix`: automatically repair certificate chain order (leaf → intermediate → root) and normalise profile certificate encoding to base64url.
 - Backups (`.bak-<timestamp>`) for every rewritten file; `--dry-run` and `--no-backup` flags; idempotent.

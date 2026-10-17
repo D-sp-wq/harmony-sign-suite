@@ -77,12 +77,40 @@ mkdir demo && cd demo
 
 ## 6. 发布
 
+> **npm 2026 新政策（实测踩过）**
+>
+> - 发布**必须开启 2FA**（或使用 bypass-2FA token，且后者 2027-01 起不能再直接发布）。
+> - **TOTP 已不能新开**：`npm profile enable-2fa` 会返回 `404 Adding a new TOTP 2FA is no longer supported`，只能在网页用**安全密钥 / 通行密钥**（Windows Hello、Touch ID、YubiKey）。
+> - 新包首次发布推荐 `npm stage publish`：先入 staging 队列，再在浏览器用 2FA 批准（`npm stage approve <id>` 会打开认证页）。
+> - 后续版本改用 **Trusted Publishing（OIDC）**，CI 不再需要任何 token。
+
+### 首次发布（新包）
+
 ```bash
-npm login                     # 需要 2FA 时按提示输入一次性密码
-npm publish                   # 触发 prepublishOnly：typecheck + test + build
-# 或
-pnpm publish
+npm stage publish --access public      # 入队，输出 stage id
+npm stage list                          # 等到 status: staged
+npm stage approve <stage-id>            # 浏览器完成安全密钥验证
 ```
+
+### 后续版本
+
+1. 在 npm 包页面 → **Settings → Trusted publishing** 添加：
+   - Repository owner：`<你的账号>`
+   - Repository：`harmony-sign-suite`
+   - Workflow：`release.yml`
+2. 本地发布（交互式 2FA）：
+
+   ```bash
+   npm publish --access public          # 浏览器完成安全密钥验证
+   ```
+
+3. 或交给 CI：
+
+   ```bash
+   git tag v<version> && git push origin v<version>
+   ```
+
+   若该版本已存在，`release.yml` 会检测到并跳过发布，不会红。
 
 - [ ] 发布后验证：
 

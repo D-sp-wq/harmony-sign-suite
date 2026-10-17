@@ -6,9 +6,13 @@ on:
       - "v*"
   workflow_dispatch:
 
+# Trusted publishing (OIDC) — no NPM_TOKEN required.
+# Configure the trusted publisher for this package on npmjs.com:
+#   package page -> Settings -> Trusted publishing -> GitHub Actions
+#     owner: the repo owner, repository: harmony-sign-suite, workflow: release.yml
 permissions:
   contents: read
-  id-token: write # npm provenance
+  id-token: write
 
 jobs:
   publish:
@@ -22,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
@@ -30,7 +34,18 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
-      - name: Publish to npm
-        run: pnpm publish --no-git-checks --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Check whether this version is already published
+        id: check
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if npm view "harmony-sign-suite@$version" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::harmony-sign-suite@$version already exists on the registry — skipping publish"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish via trusted publishing
+        if: steps.check.outputs.published == 'false'
+        run: npm publish --provenance --access public
