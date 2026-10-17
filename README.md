@@ -22,7 +22,7 @@ hss verify    对已有包验签，并核对包内 profile
 
 | 报错 | 真实原因 | hss 的处理 |
 | --- | --- | --- |
-| `Illegal base64 character 20 / 2b` | profile 里 `distribution-certificate` 用了 PEM 或标准 base64，工具只认 **base64url** | 预检标记 + 自动生成 base64url 副本再签名 |
+| `Illegal base64 character 20 / 2b` | **自签** profile 时内嵌证书用了 PEM 或标准 base64，`sign-app` 只认 base64url（AGC 预签的 p7b 不受影响） | 预检标记 + 自动生成 base64url 副本再签名 |
 | `code 107 Wrong key usage` / `code 108 unable to find valid certification path` | 证书链顺序错（必须是 叶子 → 中间 CA → 根 CA） | 预检逐张校验签发关系与签名 |
 | `code 105 SignAlg params is incorrect` | ECC 证书配了 RSA 算法 | 预检比对密钥类型与 signAlg |
 | `Param is not trusted`（verify-app） | 自建 CA 链无法通过工具的信任库（签名本身有效） | 降级为警告，不阻断出包 |

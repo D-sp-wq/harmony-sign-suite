@@ -178,4 +178,53 @@ describe("runChecks", () => {
     const results = await runChecks({ loaded, toolchain: fakeToolchain() });
     expect(find(results, "cert.expiry")).toBeUndefined();
   });
+
+  it("treats encoding of a signed p7b profile as informational, not a warning", async () => {
+    const project = await createProject();
+    // Replace the unsigned template with a signed-looking p7b that embeds a PEM cert.
+    const p7bJson = {
+      type: "release",
+      uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      validity: {
+        "not-before": Math.floor(Date.now() / 1000) - 86_400,
+        "not-after": Math.floor(Date.now() / 1000) + 86_400,
+      },
+      "bundle-info": {
+        "bundle-name": project.bundleName,
+        "distribution-certificate": project.chain.leafPem,
+      },
+    };
+    await writeFile(
+      join(project.dir, "signing", "profile.p7b"),
+      Buffer.concat([Buffer.from([0x30, 0x82, 0x01, 0x00]), Buffer.from(JSON.stringify(p7bJson))]),
+    );
+
+    const configPath = join(project.dir, "hss.config.yaml");
+    await writeFile(
+      configPath,
+      toYaml({
+        version: 1,
+        project: { bundleName: project.bundleName, hapPath: "build/entry.hap" },
+        signing: {
+          defaultEnv: "release",
+          environments: {
+            release: {
+              keystore: "signing/release.p12",
+              keyAlias: "key1",
+              signAlg: "SHA256withECDSA",
+              appCert: "signing/app.pem",
+              profileCert: "signing/profile.pem",
+              profileP7b: "signing/profile.p7b",
+              outputDir: "dist",
+            },
+          },
+        },
+      }),
+    );
+
+    const loaded = await loadConfig({ cwd: project.dir });
+    const results = await runChecks({ loaded, toolchain: fakeToolchain() });
+    expect(find(results, "profile.cert-encoding")?.status).toBe("skip");
+    expect(find(results, "profile.type")?.status).toBe("pass");
+  });
 });

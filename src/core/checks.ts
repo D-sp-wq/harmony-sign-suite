@@ -376,16 +376,29 @@ export async function runChecks(options: CheckOptions): Promise<CheckResult[]> {
         push(skip(CHECK_IDS.profileCertMatch, "证书一致性", "应用证书不可用，无法比对"));
       } else {
         const encoding = toBase64Url(embedded).encoding;
-        push(
-          encoding === "base64url"
-            ? ok(CHECK_IDS.profileCertEncoding, "Profile 证书编码", "base64url")
-            : warn(
-                CHECK_IDS.profileCertEncoding,
-                "Profile 证书编码",
-                `当前为 ${encoding}，而 hap-sign-tool 只接受 base64url`,
-                "hss sign 会自动生成 base64url 副本用于签名；手动调用 hap-sign-tool 时需自行转换，否则报 Illegal base64 character",
-              ),
-        );
+        if (profileInfo.source === "p7b") {
+          // A signed profile cannot be rewritten, and AGC-issued p7b files are
+          // accepted by hap-sign-tool even with a PEM payload — so this is
+          // informational only, not a problem to fix.
+          push(
+            skip(
+              CHECK_IDS.profileCertEncoding,
+              "Profile 证书编码",
+              `已签名 profile 内嵌证书为 ${encoding}（不可改写；若 sign-app 报 Illegal base64 请向 AGC 重新下载）`,
+            ),
+          );
+        } else {
+          push(
+            encoding === "base64url"
+              ? ok(CHECK_IDS.profileCertEncoding, "Profile 证书编码", "base64url")
+              : warn(
+                  CHECK_IDS.profileCertEncoding,
+                  "Profile 证书编码",
+                  `当前为 ${encoding}；自签 profile 会把它原样写入 p7b，sign-app 随后报 Illegal base64 character`,
+                  "hss sign 会自动生成 base64url 副本用于签名；手动调用 hap-sign-tool 时需自行转换",
+                ),
+          );
+        }
 
         const embeddedCert = parseProfileCertificate(embedded);
         if (!embeddedCert) {
