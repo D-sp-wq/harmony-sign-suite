@@ -19,3 +19,7 @@ signing/
 *.cer
 *.key
 hss.secrets.local.yaml
+
+# npm publish credentials
+.npmrc
+.npm-token

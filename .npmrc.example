@@ -1,0 +1,11 @@
+# Copy to `.npmrc` (gitignored) before publishing.
+#
+# The token itself is never written here: it comes from the NPM_TOKEN
+# environment variable, which CI (and local publishing) provides.
+//
+#   PowerShell:  $env:NPM_TOKEN = (Get-Content .npm-token -Raw).Trim()
+#   bash:        export NPM_TOKEN=$(cat .npm-token)
+//
+registry=https://registry.npmjs.org/
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+access=public
