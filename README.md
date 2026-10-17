@@ -7,6 +7,7 @@ hss init      生成配置 + .gitignore + CI 模板
 hss keygen    一键生成本地签名环境（根 CA → 中间 CA → 应用链 → profile 链）
 hss doctor    体检：Java、工具链、证书链、bundleName、profile 一致性
 hss check     只跑校验，不签名（CI 预检）
+hss fix       自动修复证书链顺序与 profile 证书编码
 hss sign      签 profile → 签 HAP → 官方验签 → 写 manifest/report
 hss verify    对已有包验签，并核对包内 profile
 ```
@@ -88,6 +89,34 @@ hss doctor && hss sign
 > 自建 CA 链只用于本地 / OpenHarmony 设备调试。**AGC 上架必须使用 AppGallery Connect 签发的证书链**，生成的环境默认 `verify: false`。
 
 keygen 把几个真实踩过的坑固化了：CA 密钥必须显式设 `-keyPwd`（否则后续 `-issuerKeyPwd` 校验失败）、签发下级必须带 `-issuerKeystorePwd`、`generate-app-cert` 必须带 `-issuer`、DN 必须是 C,O,OU,CN 顺序、输出目录需自行创建。
+
+### 已经报错了？`hss fix` 一键修
+
+```bash
+hss fix --dry-run   # 先看要改什么
+hss fix             # 写入，自动生成 .bak-<时间戳> 备份
+```
+
+能自动修的只有两类（其余只报告、不动手）：
+
+| 问题 | 处理 |
+| --- | --- |
+| 证书链顺序错（根 → 中间 → 叶子） | 按 issuer→subject 关系重排为 叶子 → 中间 → 根；无法关联的证书会被移除并列出 |
+| profile 证书用了 PEM / 标准 base64 | 转成 base64url，其他字段与格式保持不变 |
+
+修完会自动重跑一遍体检并打印结果；对已修好的文件再跑一次不会产生任何改动（幂等）。
+
+```
+  [cert.chain-order] app-local.pem（appCert）
+      修复前  HSS Local Root CA → HSS Local Intermediate CA → HSS Local App Release
+      修复后  HSS Local App Release → HSS Local Intermediate CA → HSS Local Root CA
+  [profile.cert-encoding] profile-local.json
+      修复前  pem
+      修复后  base64url
+
+✓ 已写入 2 个文件（已生成 .bak 备份）
+修复后体检：21 passed · 0 warning · 0 failure（共 21 项）
+```
 
 ---
 
@@ -173,9 +202,10 @@ src/
     hap.ts                 HAP(zip) 结构、bundlename、json5 宽容解析
     profile.ts             HarmonyAppProvision 解析、p7b 提取、base64url 规范化
     checks.ts              规则引擎（22 条检查）
+    fix.ts                 链重排 + 编码规范化（带备份与幂等）
     signing.ts             命令编排、脱敏、manifest
     report.ts              终端 / Markdown / JSON 报告
-test/                      37 个单测（含用 @peculiar/x509 现造证书链）
+test/                      61 个单测（含用 @peculiar/x509 现造证书链）
 scripts/demo.ts            生成可演练的示例工程
 ```
 
@@ -196,6 +226,7 @@ pnpm demo            # 生成 examples/demo
 - 自动探测 `E:\huawei\DevEco Studio\sdk\...\hap-sign-tool.jar` 并读取 Java 版本
 - `hss keygen` 从零生成完整 CA 链、应用/profile 证书与 profile 模板
 - 用生成的环境 `hss doctor` 21 项全过 → `hss sign` 出真实签名包（空目录到可安装包，约 10 秒）
+- `hss fix` 演练：故意反转证书链 + 把 profile 证书改回 PEM → `hss fix` 两项全修 → 体检 21 项全过 → 签名出包
 - 自动把 PEM 证书转 base64url，修复 `Illegal base64 character`
 - `verify-app` 对自建链的 `not trusted` 识别为警告
 - 命令参数与官方 `-help` 逐项核对
@@ -209,7 +240,7 @@ pnpm demo            # 生成 examples/demo
 ## 路线图
 
 - [x] `hss keygen`：一键自建 OpenHarmony 本地调试签名环境
-- [ ] `hss fix`：批量修复 profile 编码 / 证书链顺序并给出 diff
+- [x] `hss fix`：自动修复证书链顺序与 profile 证书编码（备份 + 幂等）
 - [ ] DevEco Studio 插件（右键 `hss sign`）
 - [ ] 可重复构建校验：同一 commit 两次签名产物哈希对比
 

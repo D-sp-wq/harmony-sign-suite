@@ -6,6 +6,7 @@ import { registerInit } from "./cli/commands/init.js";
 import { registerKeygen } from "./cli/commands/keygen.js";
 import { registerDoctor } from "./cli/commands/doctor.js";
 import { registerCheck } from "./cli/commands/check.js";
+import { registerFix } from "./cli/commands/fix.js";
 import { registerSign } from "./cli/commands/sign.js";
 import { registerVerify } from "./cli/commands/verify.js";
 
@@ -22,6 +23,7 @@ program
       "  hss keygen                  一键生成本地签名环境（自建 CA 链）",
       "  hss doctor                  体检：环境、证书链、bundleName、profile",
       "  hss check                   只跑校验，不签名（CI 预检）",
+      "  hss fix                     自动修复证书链顺序与 profile 编码",
       "  hss sign --env release      签名 profile + HAP，并官方验签",
       "  hss verify <package>        验签并核对包内 profile",
     ].join("\n"),
@@ -32,6 +34,7 @@ registerInit(program);
 registerKeygen(program);
 registerDoctor(program);
 registerCheck(program);
+registerFix(program);
 registerSign(program);
 registerVerify(program);
 

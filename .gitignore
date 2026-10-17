@@ -6,6 +6,7 @@ coverage/
 
 # generated demo project (contains throw-away keys)
 examples/demo/
+.*-e2e/
 .e2e/
 
 # local secrets / signing material — never commit these
