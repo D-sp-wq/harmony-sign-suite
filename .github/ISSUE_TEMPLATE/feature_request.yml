@@ -1,0 +1,44 @@
+name: Feature request
+description: 建议一个新检查项、新命令或体验改进
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你遇到的问题
+      description: 不要直接描述方案，先说清楚卡在哪
+      placeholder: 每次……都要手动……
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的方案
+      description: 命令长什么样？输出应该是什么？
+      render: shell
+      placeholder: hss foo --bar
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及模块
+      options:
+        - 签名流水线（sign / verify）
+        - 体检与规则（doctor / check）
+        - 自动修复（fix）
+        - 密钥环境（keygen）
+        - 配置与 CLI
+        - 文档
+    validations:
+      required: true

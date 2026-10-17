@@ -2,6 +2,18 @@
 
 发布前逐项打勾。命令以 `pnpm` 为例，`npm` 同样可用。
 
+## 0. 建 GitHub 仓库
+
+```bash
+winget install GitHub.cli      # 安装 gh
+gh auth login                  # 浏览器登录
+pwsh scripts/bootstrap-github.ps1 -Owner <你的 GitHub 用户名>
+```
+
+脚本会：替换 README / issue 模板里的 `OWNER` 占位 → 必要时修正 git 身份 → 创建仓库并推送 `main`。
+
+> 没有 `gh` 时脚本会打印手动步骤（网页建仓 → `git remote add` → `git push`）。
+
 ## 1. 版本与元数据
 
 - [ ] `package.json` 的 `version` 与 `CHANGELOG.md` 一致
