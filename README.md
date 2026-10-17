@@ -3,7 +3,7 @@
 [![ci](https://github.com/D-sp-wq/harmony-sign-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/D-sp-wq/harmony-sign-suite/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/harmony-sign-suite.svg)](https://www.npmjs.com/package/harmony-sign-suite)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![node](https://img.shields.io/badge/node-%3E%3D18.18-brightgreen.svg)](package.json)
+[![node](https://img.shields.io/badge/node-%3E%3D22.13-brightgreen.svg)](package.json)
 
 一条命令，把「未签名 HAP → AGC 可上传的签名包」跑完，并在上传前把会让 AGC 打回的问题本地查出来。
 
@@ -41,7 +41,7 @@ hss verify    对已有包验签，并核对包内 profile
 ## 快速开始
 
 ```bash
-# Node >= 18.18，Java >= 8
+# Node >= 22.13，Java >= 8
 npm i -g harmony-sign-suite     # 或：npx harmony-sign-suite@latest
 # 本地开发：pnpm install && pnpm build && node dist/index.js
 
