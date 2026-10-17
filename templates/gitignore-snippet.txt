@@ -1,0 +1,13 @@
+# HarmonyOS 签名物料（私钥！）绝不入库
+signing/
+*.p12
+*.p7b
+*.pem
+*.cer
+*.jks
+*.key
+
+# hss 产物
+dist/
+hss-report.md
+hss-sign-manifest.json

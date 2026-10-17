@@ -1,0 +1,52 @@
+version: 1
+
+project:
+  name: __PROJECT_NAME__
+  # 包名必须与 module.json5 / app.json5 中的 bundleName 一致
+  bundleName: __BUNDLE_NAME__
+  # 构建产物；也可以在每个 environment 里单独覆盖
+  hapPath: __HAP_PATH__
+
+signing:
+  # javaPath: C:\Program Files\Java\jdk-21\bin\java.exe
+  # toolchain: 指向 hap-sign-tool.jar 或它所在的目录；留空则自动探测 DevEco / SDK
+  # toolchain: C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony\toolchains\hap-sign-tool.jar
+  defaultEnv: release
+
+  environments:
+    release:
+      keystore: signing/release.p12
+      keyAlias: oh-app1-key-v1
+      # profile 签名密钥可以与应用签名密钥不是同一把（OpenHarmony 本地签名常见）
+      # profileKeyAlias: oh-profile-key-v1
+      # profileKeyPwd:
+      #   env: HSS_PROFILE_KEY_PWD
+      # 口令只写引用，不要写明文；运行时从环境变量或文件读取
+      keystorePwd:
+        env: HSS_KEYSTORE_PWD
+      keyPwd:
+        env: HSS_KEY_PWD
+      signAlg: SHA256withECDSA
+      appCert: signing/app-release.pem
+      profileCert: signing/profile-release.pem
+      # 二选一：未签名的 HarmonyAppProvision 模板，或已签名的 .p7b
+      # 注意：profile 内嵌证书必须是 base64url；hss 会自动生成转换后的副本
+      profileJson: signing/profile-release.json
+      outputDir: dist
+      # 签名后执行官方 verify-app（自建 CA 链会被判定 not trusted，可设为 false）
+      verify: true
+
+    debug:
+      keystore: signing/debug.p12
+      keyAlias: oh-app1-key-v1
+      keystorePwd:
+        env: HSS_KEYSTORE_PWD
+      signAlg: SHA256withECDSA
+      appCert: signing/app-debug.pem
+      profileCert: signing/profile-debug.pem
+      profileP7b: signing/debug.p7b
+      outputDir: dist/debug
+
+checks:
+  # 需要跳过的检查 id，例如 ["cert.expiry"]
+  ignore: []

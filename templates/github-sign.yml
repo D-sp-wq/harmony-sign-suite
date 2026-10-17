@@ -1,0 +1,70 @@
+name: sign-harmonyos
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install hss
+        run: npm install --global harmony-sign-suite
+
+      - name: Materialise signing assets
+        # 密钥库/证书以 base64 存进仓库 Secrets，避免明文入库
+        env:
+          HSS_KEYSTORE_B64: ${{ secrets.HSS_KEYSTORE_B64 }}
+          HSS_APP_CERT_B64: ${{ secrets.HSS_APP_CERT_B64 }}
+          HSS_PROFILE_CERT_B64: ${{ secrets.HSS_PROFILE_CERT_B64 }}
+          HSS_PROFILE_JSON_B64: ${{ secrets.HSS_PROFILE_JSON_B64 }}
+        run: |
+          mkdir -p signing
+          printf '%s' "$HSS_KEYSTORE_B64"     | base64 -d > signing/release.p12
+          printf '%s' "$HSS_APP_CERT_B64"     | base64 -d > signing/app-release.pem
+          printf '%s' "$HSS_PROFILE_CERT_B64" | base64 -d > signing/profile-release.pem
+          printf '%s' "$HSS_PROFILE_JSON_B64" | base64 -d > signing/profile-release.json
+
+      - name: Pre-flight checks
+        run: hss check --env release
+        env:
+          HSS_KEYSTORE_PWD: ${{ secrets.HSS_KEYSTORE_PWD }}
+          HSS_KEY_PWD: ${{ secrets.HSS_KEY_PWD }}
+
+      - name: Build and sign
+        run: hss sign --env release --json
+        env:
+          HSS_KEYSTORE_PWD: ${{ secrets.HSS_KEYSTORE_PWD }}
+          HSS_KEY_PWD: ${{ secrets.HSS_KEY_PWD }}
+
+      - name: Upload signed package
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-package
+          path: dist/
+          if-no-files-found: error
+
+      - name: Upload sign report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sign-report
+          path: |
+            dist/hss-sign-manifest.json
+            dist/hss-report.md

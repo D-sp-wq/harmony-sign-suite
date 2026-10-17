@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# generated demo project (contains throw-away keys)
+examples/demo/
+.e2e/
+
+# local secrets / signing material — never commit these
+signing/
+*.p12
+*.p7b
+*.pem
+*.cer
+*.key
+hss.secrets.local.yaml
