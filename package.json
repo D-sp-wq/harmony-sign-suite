@@ -11,7 +11,9 @@
     "devtools"
   ],
   "license": "MIT",
+  "author": "hss contributors",
   "type": "module",
+  "packageManager": "pnpm@11.7.0",
   "bin": {
     "hss": "dist/index.js"
   },
@@ -30,7 +32,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "demo": "tsx scripts/demo.ts",
-    "verify": "npm run typecheck && npm run test"
+    "verify": "tsc --noEmit && vitest run",
+    "prepack": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "tsc --noEmit && vitest run && tsc -p tsconfig.build.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",

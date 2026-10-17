@@ -8,6 +8,8 @@ coverage/
 examples/demo/
 .*-e2e/
 .e2e/
+.pack/
+.packtest/
 
 # local secrets / signing material — never commit these
 signing/

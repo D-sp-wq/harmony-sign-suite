@@ -37,7 +37,8 @@ hss verify    对已有包验签，并核对包内 profile
 
 ```bash
 # Node >= 18.18，Java >= 8
-npm i -g harmony-sign-suite     # 或本地：pnpm build && node dist/index.js
+npm i -g harmony-sign-suite     # 或：npx harmony-sign-suite@latest
+# 本地开发：pnpm install && pnpm build && node dist/index.js
 
 hss init                        # 生成 hss.config.yaml / .gitignore / CI
 # 把 p12、证书、profile 放进 signing/（已被 .gitignore 忽略）
@@ -243,6 +244,12 @@ pnpm demo            # 生成 examples/demo
 - [x] `hss fix`：自动修复证书链顺序与 profile 证书编码（备份 + 幂等）
 - [ ] DevEco Studio 插件（右键 `hss sign`）
 - [ ] 可重复构建校验：同一 commit 两次签名产物哈希对比
+
+## 文档
+
+- [AGC 签名踩坑实录](docs/article-agc-signing-pitfalls.md)——反序证书链、base64url 的真实边界、`not trusted` 的误判
+- [发布清单](docs/RELEASE.md)——npm 发布前逐项校验
+- [CHANGELOG](CHANGELOG.md)
 
 ## License
 

@@ -43,6 +43,12 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.5)
 
+  .packtest:
+    dependencies:
+      harmony-sign-suite:
+        specifier: file:C:/dev/hss/.pack/harmony-sign-suite-0.3.0.tgz
+        version: file:.pack/harmony-sign-suite-0.3.0.tgz
+
 packages:
 
   '@esbuild/aix-ppc64@0.21.5':
@@ -660,6 +666,12 @@ packages:
   get-stream@9.0.1:
     resolution: {integrity: sha512-kVCxPF3vQM/N0B1PmoqVUqgHP+EeVjmZSQn+1oCRPxd2P21P2F19lIgbR3HBosbB1PUhOAoctJnfEn2GbN2eZA==}
     engines: {node: '>=18'}
+
+  harmony-sign-suite@file:.pack/harmony-sign-suite-0.3.0.tgz:
+    resolution: {integrity: sha512-iL0YM41tyJEDuSsO0DHTitAg/CDadQ03RWtBpWrCXsZTvDCxVEJ93M6FGyAPBKpQ3swpUEqKxeyQnX4NS/5QcQ==, tarball: file:.pack/harmony-sign-suite-0.3.0.tgz}
+    version: 0.3.0
+    engines: {node: '>=18.18'}
+    hasBin: true
 
   human-signals@8.0.1:
     resolution: {integrity: sha512-eKCa6bwnJhvxj14kZk5NCPc6Hb6BdsU9DZcOnmQKSnO1VKrfV0zCvtttPZUsBvjmNDn8rpcJfpwSYnHBjc95MQ==}
@@ -1402,6 +1414,14 @@ snapshots:
     dependencies:
       '@sec-ant/readable-stream': 0.4.1
       is-stream: 4.0.1
+
+  harmony-sign-suite@file:.pack/harmony-sign-suite-0.3.0.tgz:
+    dependencies:
+      adm-zip: 0.5.18
+      commander: 12.1.0
+      execa: 9.6.1
+      yaml: 2.9.1
+      zod: 3.25.76
 
   human-signals@8.0.1: {}
 
