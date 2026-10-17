@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 先看文档（体检项、命令说明、常见报错）
-    url: https://github.com/OWNER/harmony-sign-suite#readme
+    url: https://github.com/D-sp-wq/harmony-sign-suite#readme
     about: README 里有错误码对照表和每个命令的用法
   - name: AGC 签名踩坑文章
-    url: https://github.com/OWNER/harmony-sign-suite/blob/main/docs/article-agc-signing-pitfalls.md
+    url: https://github.com/D-sp-wq/harmony-sign-suite/blob/main/docs/article-agc-signing-pitfalls.md
     about: 反序证书链、base64url、not trusted 的实测结论

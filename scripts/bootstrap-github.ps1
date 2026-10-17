@@ -115,17 +115,31 @@ $targets = @(
     (Join-Path $root ".github/ISSUE_TEMPLATE/config.yml")
 )
 $changed = $false
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 foreach ($file in $targets) {
     if (-not (Test-Path $file)) { continue }
     $text = Get-Content $file -Raw
     if ($text.Contains("OWNER/")) {
         $replaced = $text.Replace("OWNER/$Repo", "$Owner/$Repo")
-        Set-Content -Path $file -Value $replaced -NoNewline -Encoding utf8
+        [System.IO.File]::WriteAllText($file, $replaced, $utf8NoBom)
         Ok "patched $(Split-Path -Leaf $file)"
         $changed = $true
     }
 }
 if (-not $changed) { Ok "nothing to patch" }
+
+# ---------------------------------------------------------------- commit
+# Commit the placeholder patch first: `git rebase` refuses to run on a dirty tree.
+Step "committing repository metadata"
+git add -A
+$pending = git status --porcelain
+if ($pending) {
+    git commit -m "chore: 绑定仓库地址与 issue 模板链接" | Out-Null
+    if ($LASTEXITCODE -ne 0) { Fail "commit failed"; exit 1 }
+    Ok "committed"
+} else {
+    Ok "working tree clean, nothing to commit"
+}
 
 # ---------------------------------------------------------------- authors
 if ($RewriteAuthors) {
@@ -137,20 +151,15 @@ if ($RewriteAuthors) {
         if ($answer -notin @("y", "Y", "yes")) { Fail "aborted"; exit 1 }
     }
     $env:GIT_AUTHOR_NAME = $currentName
+    $env:GIT_AUTHOR_EMAIL = $currentEmail
+    $env:GIT_COMMITTER_NAME = $currentName
+    $env:GIT_COMMITTER_EMAIL = $currentEmail
     git rebase --root --exec "git commit --amend --no-edit --reset-author" | Out-Null
-    if ($LASTEXITCODE -ne 0) { Fail "rebase failed"; exit 1 }
+    if ($LASTEXITCODE -ne 0) {
+        Fail "rebase failed - resolve with 'git rebase --abort' and re-run without -RewriteAuthors"
+        exit 1
+    }
     Ok "authors rewritten"
-}
-
-# ---------------------------------------------------------------- commit
-Step "committing repository metadata"
-git add -A
-$pending = git status --porcelain
-if ($pending) {
-    git commit -m "chore: 绑定仓库地址与 issue 模板链接" | Out-Null
-    Ok "committed"
-} else {
-    Ok "working tree clean, nothing to commit"
 }
 
 # ---------------------------------------------------------------- remote

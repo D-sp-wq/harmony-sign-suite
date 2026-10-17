@@ -1,6 +1,6 @@
 # hss — HarmonyOS 签名与上架自动化工具链
 
-[![ci](https://github.com/OWNER/harmony-sign-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/harmony-sign-suite/actions/workflows/ci.yml)
+[![ci](https://github.com/D-sp-wq/harmony-sign-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/D-sp-wq/harmony-sign-suite/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/harmony-sign-suite.svg)](https://www.npmjs.com/package/harmony-sign-suite)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%3E%3D18.18-brightgreen.svg)](package.json)
