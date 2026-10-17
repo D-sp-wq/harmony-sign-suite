@@ -5,13 +5,12 @@
 #   gh auth login                  # choose HTTPS, login with a browser
 #
 # Usage:
-#   pwsh scripts/bootstrap-github.ps1 -Owner <your-github-username>
-#   pwsh scripts/bootstrap-github.ps1 -Owner <name> -GitName "Your Name" -GitEmail "you@users.noreply.github.com"
-#   pwsh scripts/bootstrap-github.ps1 -Owner <name> -RewriteAuthors   # rewrite placeholder authors
+#   pwsh scripts/bootstrap-github.ps1                  # auto-detect owner + identity
+#   pwsh scripts/bootstrap-github.ps1 -RewriteAuthors  # also rewrite placeholder authors
+#   pwsh scripts/bootstrap-github.ps1 -Owner someone -Repo my-repo -Visibility private
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
     [string]$Owner,
 
     [string]$Repo = "harmony-sign-suite",
@@ -42,19 +41,71 @@ $branch = git branch --show-current
 if ($branch -ne "main") { Fail "expected branch 'main', found '$branch'"; exit 1 }
 Ok "branch: main"
 
+# ---------------------------------------------------------------- github account
+Step "resolving GitHub account"
+# PATH may be stale in some shells (e.g. right after a winget install), so fall
+# back to the well-known install locations.
+$ghExe = (Get-Command gh -ErrorAction SilentlyContinue).Source
+if (-not $ghExe) {
+    foreach ($candidate in @(
+            "$env:ProgramFiles\GitHub CLI\gh.exe",
+            "${env:ProgramFiles(x86)}\GitHub CLI\gh.exe",
+            "$env:LOCALAPPDATA\GitHub CLI\gh.exe"
+        )) {
+        if ($candidate -and (Test-Path $candidate)) { $ghExe = $candidate; break }
+    }
+}
+
+$authed = $false
+if ($ghExe) {
+    & $ghExe auth status *> $null
+    $authed = ($LASTEXITCODE -eq 0)
+}
+
+$login = $null
+$userId = $null
+if ($authed) {
+    $login = (& $ghExe api user --jq .login).Trim()
+    $userId = (& $ghExe api user --jq .id).Trim()
+    Ok "gh authenticated as $login (id $userId)"
+} else {
+    Warn "gh is not installed or not logged in"
+}
+
+if (-not $Owner) {
+    if (-not $login) {
+        Fail "cannot determine the repository owner - run 'gh auth login' or pass -Owner"
+        exit 1
+    }
+    $Owner = $login
+}
+Ok "owner: $Owner"
+
 # ---------------------------------------------------------------- identity
 Step "git identity"
-if ($GitName) { git config user.name $GitName; Ok "user.name = $GitName" }
+$currentName = git config user.name
+$currentEmail = git config user.email
+
+# Auto-fill a sane identity when git still has the installer placeholder.
+if ($authed -and -not $GitEmail -and ($currentEmail -like "*example.com" -or [string]::IsNullOrWhiteSpace($currentEmail))) {
+    $GitEmail = "$userId+$login@users.noreply.github.com"
+    Ok "using GitHub noreply email: $GitEmail"
+}
+if ($authed -and -not $GitName -and ($currentName -eq "Your Name" -or [string]::IsNullOrWhiteSpace($currentName))) {
+    $displayName = (& $ghExe api user --jq '.name // .login').Trim()
+    if (-not $displayName) { $displayName = $login }
+    $GitName = $displayName
+    Ok "using GitHub display name: $GitName"
+}
+
 if ($GitEmail) { git config user.email $GitEmail; Ok "user.email = $GitEmail" }
+if ($GitName) { git config user.name $GitName; Ok "user.name = $GitName" }
 
 $currentName = git config user.name
 $currentEmail = git config user.email
-if (-not $GitName -and -not $GitEmail) {
-    Warn "current identity: $currentName <$currentEmail>"
-    if ($currentEmail -eq "you@example.com") {
-        Warn "this is a placeholder identity - commits will not be linked to your GitHub account."
-        Warn "re-run with: -GitName `"Your Name`" -GitEmail `"<id>+<user>@users.noreply.github.com`""
-    }
+if ($currentEmail -like "*example.com") {
+    Warn "identity is still a placeholder - commits will not be linked to your GitHub account."
+    Warn "re-run with: -GitName `"Your Name`" -GitEmail `"<id>+<user>@users.noreply.github.com`""
 }
 
 # ---------------------------------------------------------------- placeholders
@@ -104,7 +155,6 @@ if ($pending) {
 
 # ---------------------------------------------------------------- remote
 Step "creating repository"
-$gh = Get-Command gh -ErrorAction SilentlyContinue
 $hasRemote = (git remote) -contains "origin"
 
 if ($hasRemote) {
@@ -113,14 +163,8 @@ if ($hasRemote) {
     git push -u origin main
     if ($LASTEXITCODE -ne 0) { Fail "push failed"; exit 1 }
     Ok "pushed to origin/main"
-} elseif ($gh) {
-    & gh auth status 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Fail "gh is installed but not logged in"
-        Write-Host "  run: gh auth login" -ForegroundColor Yellow
-        exit 1
-    }
-    & gh repo create "$Owner/$Repo" "--$Visibility" --source . --remote origin --push `
+} elseif ($authed) {
+    & $ghExe repo create "$Owner/$Repo" "--$Visibility" --source . --remote origin --push `
         --description "HarmonyOS 签名与上架自动化工具链：体检 / 修复 / 一键签名，含 AGC 踩坑诊断"
     if ($LASTEXITCODE -ne 0) { Fail "gh repo create failed"; exit 1 }
     Ok "repository created and pushed"
