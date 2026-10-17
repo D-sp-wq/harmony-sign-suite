@@ -1,6 +1,6 @@
 {
   "name": "harmony-sign-suite",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "HarmonyOS signing & publishing automation toolchain — one command from unsigned HAP to AGC-ready package, with pre-flight checks and human-readable diagnostics.",
   "keywords": [
     "harmonyos",

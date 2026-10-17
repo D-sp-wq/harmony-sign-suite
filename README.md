@@ -4,6 +4,7 @@
 
 ```
 hss init      生成配置 + .gitignore + CI 模板
+hss keygen    一键生成本地签名环境（根 CA → 中间 CA → 应用链 → profile 链）
 hss doctor    体检：Java、工具链、证书链、bundleName、profile 一致性
 hss check     只跑校验，不签名（CI 预检）
 hss sign      签 profile → 签 HAP → 官方验签 → 写 manifest/report
@@ -60,6 +61,33 @@ dist/
   hss-sign-manifest.json            输入/输出 sha256、命令、耗时、检查结果
   hss-report.md                     可读报告（可直接贴 CI artifact）
 ```
+
+### 没有证书？一条命令搭本地签名环境
+
+```bash
+hss keygen --write-config --bundle-name com.demo.app
+```
+
+自动完成 6 步（每一步都可以在 `--dry-run` 里逐字看到）：
+
+1. `generate-ca` 根 CA（ECC P-256）
+2. `generate-ca` 中间 CA，由根 CA 签发
+3. `generate-keypair` 应用签名密钥
+4. `generate-app-cert` 应用证书链（叶子 → 中间 → 根）
+5. `generate-keypair` profile 签名密钥
+6. `generate-profile-cert` profile 证书链
+7. 生成 `profile-local.json`（内嵌证书自动转 base64url）
+8. 写入 `hss.config.yaml` 对应环境 + 补全 `.gitignore`
+
+```bash
+# 口令不写进配置：默认随机生成并在终端显示一次
+export HSS_KEYSTORE_PWD=...  HSS_KEY_PWD=...
+hss doctor && hss sign
+```
+
+> 自建 CA 链只用于本地 / OpenHarmony 设备调试。**AGC 上架必须使用 AppGallery Connect 签发的证书链**，生成的环境默认 `verify: false`。
+
+keygen 把几个真实踩过的坑固化了：CA 密钥必须显式设 `-keyPwd`（否则后续 `-issuerKeyPwd` 校验失败）、签发下级必须带 `-issuerKeystorePwd`、`generate-app-cert` 必须带 `-issuer`、DN 必须是 C,O,OU,CN 顺序、输出目录需自行创建。
 
 ---
 
@@ -166,7 +194,8 @@ pnpm demo            # 生成 examples/demo
 已验证（本机真实跑通）：
 
 - 自动探测 `E:\huawei\DevEco Studio\sdk\...\hap-sign-tool.jar` 并读取 Java 版本
-- 用工具自建 CA 链 → `sign-profile` → `sign-app` 出真实签名包
+- `hss keygen` 从零生成完整 CA 链、应用/profile 证书与 profile 模板
+- 用生成的环境 `hss doctor` 21 项全过 → `hss sign` 出真实签名包（空目录到可安装包，约 10 秒）
 - 自动把 PEM 证书转 base64url，修复 `Illegal base64 character`
 - `verify-app` 对自建链的 `not trusted` 识别为警告
 - 命令参数与官方 `-help` 逐项核对
@@ -179,8 +208,8 @@ pnpm demo            # 生成 examples/demo
 
 ## 路线图
 
+- [x] `hss keygen`：一键自建 OpenHarmony 本地调试签名环境
 - [ ] `hss fix`：批量修复 profile 编码 / 证书链顺序并给出 diff
-- [ ] `hss keygen`：一条命令自建 OpenHarmony 本地调试签名环境（当前需 9 条手工命令）
 - [ ] DevEco Studio 插件（右键 `hss sign`）
 - [ ] 可重复构建校验：同一 commit 两次签名产物哈希对比
 

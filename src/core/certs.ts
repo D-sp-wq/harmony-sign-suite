@@ -32,13 +32,15 @@ export function extractPemCertificates(text: string): string[] {
   return out;
 }
 
-/** Wrap a base64 (standard or URL-safe) DER certificate into PEM. */
+/** Wrap a base64 (standard or URL-safe, padded or not) DER certificate into PEM. */
 export function pemFromBase64Certificate(base64: string): string {
   const body = base64
     .replace(/\s+/g, "")
     .replace(/-/g, "+")
     .replace(/_/g, "/");
-  const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
+  // base64url is usually unpadded; PEM parsers require a multiple of 4.
+  const padded = body + "=".repeat((4 - (body.length % 4)) % 4);
+  const wrapped = padded.match(/.{1,64}/g)?.join("\n") ?? padded;
   return `-----BEGIN CERTIFICATE-----\n${wrapped}\n-----END CERTIFICATE-----\n`;
 }
 

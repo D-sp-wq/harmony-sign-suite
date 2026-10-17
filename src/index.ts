@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { TOOL_NAME, VERSION } from "./version.js";
 import { HssError } from "./core/errors.js";
 import { registerInit } from "./cli/commands/init.js";
+import { registerKeygen } from "./cli/commands/keygen.js";
 import { registerDoctor } from "./cli/commands/doctor.js";
 import { registerCheck } from "./cli/commands/check.js";
 import { registerSign } from "./cli/commands/sign.js";
@@ -18,6 +19,7 @@ program
       "HarmonyOS 签名与上架自动化工具链",
       "",
       "  hss init                    生成配置、.gitignore 与 CI 模板",
+      "  hss keygen                  一键生成本地签名环境（自建 CA 链）",
       "  hss doctor                  体检：环境、证书链、bundleName、profile",
       "  hss check                   只跑校验，不签名（CI 预检）",
       "  hss sign --env release      签名 profile + HAP，并官方验签",
@@ -27,6 +29,7 @@ program
   .showHelpAfterError("（使用 hss --help 查看完整用法）");
 
 registerInit(program);
+registerKeygen(program);
 registerDoctor(program);
 registerCheck(program);
 registerSign(program);

@@ -51,6 +51,15 @@ describe("certificate chain handling", () => {
     expect(fromPem.isCa).toBe(false);
   });
 
+  it("parses unpadded base64url certificates (what hap-sign-tool expects)", async () => {
+    const chain = await createTestChain();
+    const unpadded = chain.leafDerBase64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    expect(unpadded).not.toContain("=");
+
+    const parsed = describeCertificate(pemFromBase64Certificate(unpadded));
+    expect(parsed.spkiSha256).toBe(describeCertificate(chain.leafPem).spkiSha256);
+  });
+
   it("matches key types to signature algorithms", () => {
     expect(keyTypeMatchesSignAlg("ec", "SHA256withECDSA")).toBe(true);
     expect(keyTypeMatchesSignAlg("ec", "SHA384withECDSA")).toBe(true);
